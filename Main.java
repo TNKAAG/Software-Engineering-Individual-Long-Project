@@ -42,6 +42,11 @@ public class Main {
         kitchenAC = new TimerDecorator(new EnergyMonitorDecorator(kitchenAC));
         bedroomFan = new VoiceControlDecorator(bedroomFan);
 
+        // Update controller room devices so automation modes use wrappers
+        controller.updateRoomDevice("Bathroom", bathroomLight);
+        controller.updateRoomDevice("Kitchen", kitchenAC);
+        controller.updateRoomDevice("Bedroom", bedroomFan);
+
         Scanner scanner = new Scanner(System.in);
 
         while (true) {
