@@ -1,8 +1,19 @@
-import controller.SmartHomeController;
-import decorator.*;
-import devices.*;
-import factory.DeviceFactory;
 import java.util.Scanner;
+
+import controller.SmartHomeController;
+import decorator.DeviceDecorator;
+import decorator.EnergyMonitorDecorator;
+import decorator.MotionDetectionDecorator;
+import decorator.TimerDecorator;
+import decorator.VoiceControlDecorator;
+import devices.AC;
+import devices.Alarm;
+import devices.Device;
+import devices.DoorLock;
+import devices.Fan;
+import devices.Light;
+import devices.Thermostat;
+import factory.DeviceFactory;
 import model.Room;
 import observer.Logger;
 import strategy.AwayMode;
@@ -48,6 +59,13 @@ public class Main {
         controller.updateRoomDevice("Bedroom", bedroomFan);
 
         Scanner scanner = new Scanner(System.in);
+
+        System.out.println("1. Run Console Version");
+        System.out.println("2. Run GUI Version");
+        int version = scanner.nextInt();
+
+        if (version == 1) {
+    // existing console menu loop
 
         while (true) {
             System.out.println("\n===== SMART HOME CONTROLLER =====");
@@ -300,6 +318,9 @@ public class Main {
                 default:
                     System.out.println("Invalid choice.");
             }
+        }
+        } else {
+            SmartHomeGUI gui = new SmartHomeGUI(controller);
         }
     }
 }
