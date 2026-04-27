@@ -1,5 +1,3 @@
-import java.util.Scanner;
-
 import controller.SmartHomeController;
 import decorator.DeviceDecorator;
 import decorator.EnergyMonitorDecorator;
@@ -14,6 +12,8 @@ import devices.Fan;
 import devices.Light;
 import devices.Thermostat;
 import factory.DeviceFactory;
+import java.util.List;
+import java.util.Scanner;
 import model.Room;
 import observer.Logger;
 import strategy.AwayMode;
@@ -36,10 +36,22 @@ public class Main {
         Alarm alarm = (Alarm) DeviceFactory.createDevice("alarm", "Home Alarm");
 
         // Add rooms
-        controller.addRoom(new Room("Bedroom", bedroomFan));
-        controller.addRoom(new Room("Bathroom", bathroomLight));
-        controller.addRoom(new Room("Kitchen", kitchenAC));
-        controller.addRoom(new Room("Living Room", livingThermostat));
+        Room bedroom = new Room("Bedroom");
+        bedroom.addDevice(bedroomFan);
+        bedroom.addDevice(DeviceFactory.createDevice("light", "Bedroom Light"));
+        controller.addRoom(bedroom);
+
+        Room bathroom = new Room("Bathroom");
+        bathroom.addDevice(bathroomLight);
+        controller.addRoom(bathroom);
+
+        Room kitchen = new Room("Kitchen");
+        kitchen.addDevice(kitchenAC);
+        controller.addRoom(kitchen);
+
+        Room livingRoom = new Room("Living Room");
+        livingRoom.addDevice(livingThermostat);
+        controller.addRoom(livingRoom);
 
         // Add system devices
         controller.setDoorLock(doorLock);
@@ -99,20 +111,39 @@ public class Main {
                     System.out.println("3. Kitchen");
                     System.out.println("4. Living Room");
 
-                    int roomChoice2 = scanner.nextInt();
+                    int roomChoice = scanner.nextInt();
                     scanner.nextLine();
 
-                    Device selectedDevice = null;
-
-                    if (roomChoice2 == 1) selectedDevice = bedroomFan;
-                    if (roomChoice2 == 2) selectedDevice = bathroomLight;
-                    if (roomChoice2 == 3) selectedDevice = kitchenAC;
-                    if (roomChoice2 == 4) selectedDevice = livingThermostat;
-
-                    if (selectedDevice == null) {
-                        System.out.println("Invalid room.");
+                    String roomName = "";
+                    if (roomChoice == 1) roomName = "Bedroom";
+                    else if (roomChoice == 2) roomName = "Bathroom";
+                    else if (roomChoice == 3) roomName = "Kitchen";
+                    else if (roomChoice == 4) roomName = "Living Room";
+                    else {
+                        System.out.println("Invalid choice.");
                         break;
                     }
+
+                    List<Device> roomDevices = controller.getRoomDevices(roomName);
+                    if (roomDevices == null || roomDevices.isEmpty()) {
+                        System.out.println("No devices in this room.");
+                        break;
+                    }
+
+                    System.out.println("Choose Device:");
+                    for (int i = 0; i < roomDevices.size(); i++) {
+                        System.out.println((i+1) + ". " + roomDevices.get(i).getName());
+                    }
+
+                    int deviceChoice = scanner.nextInt();
+                    scanner.nextLine();
+
+                    if (deviceChoice < 1 || deviceChoice > roomDevices.size()) {
+                        System.out.println("Invalid choice.");
+                        break;
+                    }
+
+                    Device selectedDevice = roomDevices.get(deviceChoice - 1);
 
                     Device baseDevice = selectedDevice;
 
@@ -166,11 +197,11 @@ public class Main {
 
                         switch (actionChoice) {
                             case 1:
-                                baseDevice.turnOn();
+                                selectedDevice.turnOn();;
                                 break;
 
                             case 2:
-                                baseDevice.turnOff();
+                                selectedDevice.turnOff();
                                 break;
 
                             case 3:
@@ -205,7 +236,7 @@ public class Main {
                                 break;
 
                             case 4:
-                                if (baseDevice instanceof MotionDetectionDecorator) {
+                                if (selectedDevice instanceof MotionDetectionDecorator) {
                                     ((MotionDetectionDecorator) selectedDevice).detectMotion();
                                 } else {
                                     System.out.println("This device does not support motion detection.");
@@ -213,30 +244,30 @@ public class Main {
                                 break;
 
                             case 5:
-                                if (baseDevice instanceof TimerDecorator) {
+                                if (selectedDevice  instanceof TimerDecorator) {
                                     System.out.print("Enter seconds until auto OFF: ");
                                     int seconds = scanner.nextInt();
                                     scanner.nextLine();
-                                    ((TimerDecorator) baseDevice).scheduleTurnOff(seconds);
+                                    ((TimerDecorator) selectedDevice ).scheduleTurnOff(seconds);
                                 } else {
                                     System.out.println("This device does not support timer scheduling.");
                                 }
                                 break;
 
                             case 6:
-                                if (baseDevice instanceof VoiceControlDecorator) {
+                                if (selectedDevice  instanceof VoiceControlDecorator) {
                                     System.out.print("Enter voice command (turn on / turn off): ");
                                     String cmd = scanner.nextLine();
-                                    ((VoiceControlDecorator) baseDevice).voiceCommand(cmd);
+                                    ((VoiceControlDecorator) selectedDevice).voiceCommand(cmd);
                                 } else {
                                     System.out.println("This device does not support voice control.");
                                 }
                                 break;
 
                             case 7:
-                                if (baseDevice instanceof EnergyMonitorDecorator) {
-                                    double energy = ((EnergyMonitorDecorator) baseDevice).getEnergyUsed();
-                                    System.out.println(baseDevice.getName() + " energy used: " +
+                                if (selectedDevice instanceof EnergyMonitorDecorator) {
+                                    double energy = ((EnergyMonitorDecorator) selectedDevice).getEnergyUsed();
+                                    System.out.println(selectedDevice.getName() + " energy used: " +
                                             String.format("%.2f", energy) + " kWh");
                                 } else {
                                     System.out.println("This device does not support energy monitoring.");

@@ -1,7 +1,15 @@
 package controller;
 
-import devices.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import devices.AbstractDevice;
+import devices.Alarm;
+import devices.Device;
+import devices.DoorLock;
 import model.Room;
 import observer.Logger;
 import observer.Observer;
@@ -36,10 +44,10 @@ public class SmartHomeController {
         return rooms.get(roomName);
     }
 
-    public Device getRoomDevice(String roomName) {
+    public List<Device> getRoomDevices(String roomName) {
         Room room = rooms.get(roomName);
         if (room == null) return null;
-        return room.getDevice();
+        return room.getDevices();
     }
 
     public Collection<Room> getAllRooms() {
@@ -49,7 +57,7 @@ public class SmartHomeController {
     public List<Device> getAllRoomDevices() {
         List<Device> devices = new ArrayList<>();
         for (Room room : rooms.values()) {
-            devices.add(room.getDevice());
+            devices.addAll(room.getDevices());
         }
         return devices;
     }
@@ -95,9 +103,17 @@ public class SmartHomeController {
     }
 
     public void updateRoomDevice(String roomName, Device newDevice) {
-    Room room = rooms.get(roomName);
-    if (room != null) {
-        room.setDevice(newDevice);
+        Room room = rooms.get(roomName);
+        if (room != null) {
+            List<Device> devices = room.getDevices();
+            for (int i = 0; i < devices.size(); i++) {
+                if (devices.get(i).getName().equals(newDevice.getName())) {
+                    devices.set(i, newDevice);
+                    return;
+                }
+            }
+            // If not found, add it
+            room.addDevice(newDevice);
+        }
     }
-}
 }

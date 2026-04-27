@@ -1,16 +1,3 @@
-import java.awt.BorderLayout;
-import java.awt.GridLayout;
-
-import javax.swing.BorderFactory;
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.SwingUtilities;
-
 import controller.SmartHomeController;
 import decorator.DeviceDecorator;
 import decorator.EnergyMonitorDecorator;
@@ -22,6 +9,20 @@ import devices.Device;
 import devices.Fan;
 import devices.Light;
 import devices.Thermostat;
+import java.awt.BorderLayout;
+import java.awt.GridLayout;
+import javax.swing.BorderFactory;
+import javax.swing.DefaultListModel;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.SwingUtilities;
+import model.Room;
 import observer.Observer;
 import strategy.AwayMode;
 import strategy.EmergencyMode;
@@ -30,6 +31,7 @@ public class SmartHomeGUI extends JFrame {
 
     private SmartHomeController controller;
     private Device selectedDevice;
+    private Room selectedRoom;
 
     private JTextArea logArea;
     private JLabel statusLabel;
@@ -44,9 +46,16 @@ public class SmartHomeGUI extends JFrame {
     private JButton voiceOffButton;
     private JButton energyButton;
 
+    private JList<String> deviceList;
+    private DefaultListModel<String> deviceModel;
+
     public SmartHomeGUI(SmartHomeController controller) {
         this.controller = controller;
         this.selectedDevice = null;
+        this.selectedRoom = null;
+
+        deviceModel = new DefaultListModel<>();
+        deviceList = new JList<>(deviceModel);
 
         setTitle("Smart Home Controller");
         setSize(980, 620);
@@ -62,20 +71,28 @@ public class SmartHomeGUI extends JFrame {
         statusPanel.add(statusLabel);
         add(statusPanel, BorderLayout.NORTH);
 
-        JPanel roomPanel = new JPanel(new GridLayout(6, 1, 8, 8));
+        JPanel roomPanel = new JPanel(new BorderLayout());
         roomPanel.setBorder(BorderFactory.createTitledBorder("Rooms & Devices"));
+
+        JPanel roomButtonsPanel = new JPanel(new GridLayout(6, 1, 8, 8));
         JButton bedroomBtn = new JButton("Bedroom");
         JButton bathroomBtn = new JButton("Bathroom");
         JButton kitchenBtn = new JButton("Kitchen");
         JButton livingBtn = new JButton("Living Room");
         JButton doorBtn = new JButton("Door Lock");
         JButton alarmBtn = new JButton("Alarm");
-        roomPanel.add(bedroomBtn);
-        roomPanel.add(bathroomBtn);
-        roomPanel.add(kitchenBtn);
-        roomPanel.add(livingBtn);
-        roomPanel.add(doorBtn);
-        roomPanel.add(alarmBtn);
+        roomButtonsPanel.add(bedroomBtn);
+        roomButtonsPanel.add(bathroomBtn);
+        roomButtonsPanel.add(kitchenBtn);
+        roomButtonsPanel.add(livingBtn);
+        roomButtonsPanel.add(doorBtn);
+        roomButtonsPanel.add(alarmBtn);
+        roomPanel.add(roomButtonsPanel, BorderLayout.NORTH);
+
+        JScrollPane deviceScroll = new JScrollPane(deviceList);
+        deviceScroll.setBorder(BorderFactory.createTitledBorder("Devices in Selected Room"));
+        roomPanel.add(deviceScroll, BorderLayout.CENTER);
+
         add(roomPanel, BorderLayout.WEST);
 
         JPanel controlPanel = new JPanel(new GridLayout(10, 1, 8, 8));
@@ -116,10 +133,10 @@ public class SmartHomeGUI extends JFrame {
         logScroll.setBorder(BorderFactory.createTitledBorder("Live Activity Log"));
         add(logScroll, BorderLayout.SOUTH);
 
-        bedroomBtn.addActionListener(e -> selectDevice(controller.getRoomDevice("Bedroom")));
-        bathroomBtn.addActionListener(e -> selectDevice(controller.getRoomDevice("Bathroom")));
-        kitchenBtn.addActionListener(e -> selectDevice(controller.getRoomDevice("Kitchen")));
-        livingBtn.addActionListener(e -> selectDevice(controller.getRoomDevice("Living Room")));
+        bedroomBtn.addActionListener(e -> selectRoom(controller.getRoom("Bedroom")));
+        bathroomBtn.addActionListener(e -> selectRoom(controller.getRoom("Bathroom")));
+        kitchenBtn.addActionListener(e -> selectRoom(controller.getRoom("Kitchen")));
+        livingBtn.addActionListener(e -> selectRoom(controller.getRoom("Living Room")));
         doorBtn.addActionListener(e -> selectDevice(controller.getDoorLock()));
         alarmBtn.addActionListener(e -> selectDevice(controller.getAlarm()));
 
@@ -215,10 +232,21 @@ public class SmartHomeGUI extends JFrame {
 
         intrusionBtn.addActionListener(e -> controller.getAlarm().trigger());
         tempDropBtn.addActionListener(e -> {
-            Device thermostat = controller.getRoomDevice("Living Room");
+            Device thermostat = controller.getRoomDevices("Living Room").get(0); // Assuming first device is thermostat
             if (thermostat instanceof Thermostat) {
                 ((Thermostat) thermostat).setTemperature(18);
                 updateStatus();
+            }
+        });
+
+        deviceList.addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                int index = deviceList.getSelectedIndex();
+                if (index >= 0 && selectedRoom != null) {
+                    selectedDevice = selectedRoom.getDevices().get(index);
+                    selectedLabel.setText("Selected Device: " + selectedDevice.getName());
+                    updateStatus();
+                }
             }
         });
 
@@ -236,6 +264,19 @@ public class SmartHomeGUI extends JFrame {
             selectedLabel.setText("Selected Device: " + device.getName());
             updateStatus();
         }
+    }
+
+    private void selectRoom(Room room) {
+        selectedRoom = room;
+        deviceModel.clear();
+        if (room != null) {
+            for (Device device : room.getDevices()) {
+                deviceModel.addElement(device.getName());
+            }
+        }
+        selectedDevice = null;
+        selectedLabel.setText("Selected Device: None");
+        updateStatus();
     }
 
     private void updateStatus() {

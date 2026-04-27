@@ -1,30 +1,40 @@
 package model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import devices.Device;
 
 public class Room {
 
     private String name;
-    private Device device;
+    private List<Device> devices;
 
-    public Room(String name, Device device) {
+    public Room(String name) {
         this.name = name;
-        this.device = device;
+        this.devices = new ArrayList<>();
     }
 
     public String getName() {
         return name;
     }
 
-    public Device getDevice() {
-        return device;
+    public List<Device> getDevices() {
+        return devices;
     }
 
-    public void setDevice(Device device) {
-        this.device = device;
+    public void addDevice(Device device) {
+        devices.add(device);
+    }
+
+    public void removeDevice(Device device) {
+        devices.remove(device);
     }
 
     public void showRoomStatus() {
-        System.out.println("Room: " + name + " -> " + device.getStatus());
+        System.out.println("Room: " + name);
+        for (Device device : devices) {
+            System.out.println("  - " + device.getStatus());
+        }
     }
 }

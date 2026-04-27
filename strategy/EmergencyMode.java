@@ -15,12 +15,20 @@ public class EmergencyMode implements AutomationMode {
 
         // Turn ON all lights only
         for (Device device : controller.getAllRoomDevices()) {
-            if (device instanceof Light) {
-                device.turnOn();
-            } else {
-                device.turnOff(); // turn off AC/Fan/Thermostat etc.
-            }
+            Device base = device;
+
+        if (device instanceof decorator.DeviceDecorator) {
+            base = ((decorator.DeviceDecorator) device).unwrap();
         }
+
+        if (base instanceof Light) {
+            device.turnOn();   // turn on wrapper (good)
+        } 
+        else 
+            {
+        device.turnOff();
+            }
+}
 
         // Lock door
         controller.getDoorLock().turnOn();

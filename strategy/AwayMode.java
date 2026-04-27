@@ -3,6 +3,7 @@ package strategy;
 import controller.SmartHomeController;
 import devices.Device;
 import devices.Thermostat;
+import java.util.List;
 import observer.Logger;
 
 public class AwayMode implements AutomationMode {
@@ -24,10 +25,22 @@ public class AwayMode implements AutomationMode {
         controller.getAlarm().turnOn();
 
         // Thermostat low power (set to 20°C if it exists)
-        Device thermo = controller.getRoomDevice("Living Room");
-        if (thermo instanceof Thermostat) {
-            ((Thermostat) thermo).setTemperature(20);
-        }
+        List<Device> livingDevices = controller.getRoomDevices("Living Room");
+        for (Device d : livingDevices) 
+            {
+            Device base = d;
+
+        if (d instanceof decorator.DeviceDecorator) 
+        {
+            base = ((decorator.DeviceDecorator) d).unwrap();
+        }   
+
+        if (base instanceof Thermostat) 
+            {
+                ((Thermostat) base).setTemperature(20);
+                break;
+            }
+            }
 
         Logger.getInstance().update("AWAY MODE COMPLETE");
     }
